@@ -1,0 +1,78 @@
+@import "tailwindcss";
+
+@theme {
+  --color-blush-50: #fdf8f6;
+  --color-blush-100: #f9eeea;
+  --color-blush-200: #f3ddd6;
+  --color-blush-300: #e8c0b4;
+  --color-blush-400: #d89a8a;
+  --color-blush-500: #c4788a;
+  --color-blush-600: #b05d72;
+  --color-blush-700: #934a5d;
+  --color-blush-800: #7a3f50;
+  --color-blush-900: #673846;
+
+  --color-cream-50: #fffefb;
+  --color-cream-100: #fdf9f3;
+  --color-cream-200: #f7f0e6;
+
+  --color-ink-50: #f7f6f5;
+  --color-ink-100: #eceae8;
+  --color-ink-200: #d8d4d0;
+  --color-ink-300: #b8b1aa;
+  --color-ink-400: #948a81;
+  --color-ink-500: #766c64;
+  --color-ink-600: #5f574f;
+  --color-ink-700: #4e4741;
+  --color-ink-800: #423d38;
+  --color-ink-900: #2c2825;
+
+  --font-sans: "Plus Jakarta Sans", ui-sans-serif, system-ui, sans-serif;
+  --font-display: "Cormorant Garamond", Georgia, serif;
+
+  --shadow-soft: 0 4px 24px -4px rgb(196 120 138 / 0.15);
+  --shadow-card: 0 2px 16px -2px rgb(44 40 37 / 0.08);
+}
+
+* {
+  -webkit-tap-highlight-color: transparent;
+}
+
+html {
+  scroll-behavior: smooth;
+}
+
+body {
+  margin: 0;
+  min-height: 100dvh;
+  font-family: var(--font-sans);
+  background-color: var(--color-blush-50);
+  color: var(--color-ink-900);
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+}
+
+#root {
+  min-height: 100dvh;
+}
+
+/* Safe area for PWA / notched phones */
+.safe-bottom {
+  padding-bottom: env(safe-area-inset-bottom, 0px);
+}
+
+.safe-top {
+  padding-top: env(safe-area-inset-top, 0px);
+}
+
+/* Custom scrollbar (desktop) */
+::-webkit-scrollbar {
+  width: 6px;
+}
+::-webkit-scrollbar-track {
+  background: transparent;
+}
+::-webkit-scrollbar-thumb {
+  background: var(--color-blush-300);
+  border-radius: 999px;
+}
