@@ -5,6 +5,7 @@ import { Button } from '../components/ui/Button'
 import { Badge } from '../components/ui/Badge'
 import { useApp } from '../context/AppContext'
 import { TRY_ON_POSES } from '../types'
+import { getLookThumbnail } from '../services/lookImage'
 
 export function WardrobePage() {
   const { wardrobe, removeLook } = useApp()
@@ -38,12 +39,18 @@ export function WardrobePage() {
                   className="overflow-hidden rounded-3xl border border-blush-100 bg-white shadow-card"
                 >
                   <Link to={`/app/ormar/${look.id}`}>
-                    <div className="aspect-[3/4] bg-blush-50">
-                      <img
-                        src={look.views.front ?? look.clothingImageUrl}
-                        alt={look.productName ?? 'Look'}
-                        className="h-full w-full object-cover"
-                      />
+                    <div className="flex aspect-[3/4] items-center justify-center bg-blush-50">
+                      {getLookThumbnail(look) ? (
+                        <img
+                          src={getLookThumbnail(look)!}
+                          alt={look.productName ?? 'Look'}
+                          className="h-full w-full object-cover"
+                        />
+                      ) : (
+                        <span className="px-2 text-center text-[11px] text-ink-400">
+                          Slika istekla — otvori i napravi novi try-on
+                        </span>
+                      )}
                     </div>
                   </Link>
                   <div className="space-y-1.5 p-2.5">

@@ -119,7 +119,7 @@ export function HomePage() {
                 >
                   <div className="aspect-[3/4] bg-blush-100">
                     <img
-                      src={look.views.front ?? look.clothingImageUrl}
+                      src={Object.values(look.views).find((u) => typeof u === 'string' && u.length > 8) ?? look.clothingImageUrl}
                       alt={look.productName ?? 'Look'}
                       className="h-full w-full object-cover"
                     />

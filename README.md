@@ -15,15 +15,18 @@ Otpremi fotke i mere, nalepi link odeće (ili upload slike) i vidi kako ti stoji
 ```bash
 cd obuci-me
 npm install
-npm run dev
+cp .env.example .env   # ubaci XAI_API_KEY iz console.x.ai
+npm run dev:all        # UI + Grok Imagine API proxy
 ```
 
 Otvori `http://localhost:5173`.
 
-```bash
-npm run build    # produkcijski build
-npm run preview  # pregled builda
-```
+- `npm run dev` — samo frontend  
+- `npm run server` — samo API na :3001  
+- `npm run build` / `npm run preview` — produkcijski build  
+
+**Try-on** ide preko xAI Grok Imagine (`POST /api/try-on`). Bez `.env` ključa generisanje ne radi.
+
 
 ## Struktura
 

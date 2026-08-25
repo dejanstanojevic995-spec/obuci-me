@@ -21,6 +21,12 @@ export function TryOnPage() {
   const [productUrl, setProductUrl] = useState('')
   const [clothingImage, setClothingImage] = useState<string | null>(null)
   const [productName, setProductName] = useState<string | undefined>()
+  const [garmentMeta, setGarmentMeta] = useState<{
+    garmentType?: string
+    garmentLabelSr?: string
+    changeOnly?: string
+    keepFromCustomer?: string[]
+  }>({})
   const [extractMsg, setExtractMsg] = useState<string | null>(null)
   const [pose, setPose] = useState<TryOnPose>('stojeći-front')
   const [loading, setLoading] = useState(false)
@@ -48,6 +54,12 @@ export function TryOnPage() {
       }
       setClothingImage(extracted.imageUrl)
       setProductName(extracted.productName)
+      setGarmentMeta({
+        garmentType: extracted.garmentType,
+        garmentLabelSr: extracted.garmentLabelSr,
+        changeOnly: extracted.changeOnly,
+        keepFromCustomer: extracted.keepFromCustomer,
+      })
       setExtractMsg(extracted.message ?? null)
     } catch {
       setError('Greška pri obradi linka.')
@@ -60,8 +72,11 @@ export function TryOnPage() {
     if (!file) return
     const reader = new FileReader()
     reader.onload = () => {
+      const name = file.name.replace(/\.[^.]+$/, '')
       setClothingImage(reader.result as string)
-      setProductName(file.name.replace(/\.[^.]+$/, ''))
+      setProductName(name)
+      // Backend će detektovati tip iz imena fajla / productName
+      setGarmentMeta({})
       setExtractMsg(null)
       setProductUrl('')
     }
@@ -85,8 +100,7 @@ export function TryOnPage() {
 
     setLoading(true)
     try {
-      spendTryOnCredit()
-      // PLACEHOLDER: tryOnApi.generateTryOn — spoljašnji Virtual Try-On API
+      // Kredit tek posle uspeha — ne trošimo ako Grok padne
       const tryOnResult = await generateTryOn({
         bodyPhotos: bodyProfile.photos,
         measurements: bodyProfile.measurements,
@@ -95,7 +109,9 @@ export function TryOnPage() {
         productUrl: mode === 'url' ? productUrl : undefined,
         productName,
         sourceType: mode,
+        ...garmentMeta,
       })
+      spendTryOnCredit()
       setResult(tryOnResult)
       setViewIndex(0)
       setSaved(false)
@@ -117,7 +133,6 @@ export function TryOnPage() {
     setLoading(true)
     setError('')
     try {
-      spendTryOnCredit()
       const tryOnResult = await generateTryOn({
         bodyPhotos: bodyProfile.photos,
         measurements: bodyProfile.measurements,
@@ -126,7 +141,9 @@ export function TryOnPage() {
         productUrl: result.productUrl,
         productName: result.productName,
         sourceType: result.sourceType,
+        ...garmentMeta,
       })
+      spendTryOnCredit()
       setResult(tryOnResult)
       setViewIndex(0)
       setSaved(false)
@@ -267,8 +284,7 @@ export function TryOnPage() {
           </div>
 
           <p className="pb-6 text-center text-[11px] text-ink-400">
-            {/* TODO marker for API */}
-            Demo rezultat — Virtual Try-On API biće povezan u services/tryOnApi.ts
+            Generisano preko Grok Imagine · 1 slika po kreditu (štednja)
           </p>
         </div>
       </div>
@@ -323,7 +339,14 @@ export function TryOnPage() {
               </Button>
             </form>
             {extractMsg && (
-              <p className="mt-3 rounded-xl bg-amber-50 px-3 py-2 text-xs text-amber-800">
+              <p
+                className={[
+                  'mt-3 rounded-xl px-3 py-2 text-xs',
+                  clothingImage
+                    ? 'bg-emerald-50 text-emerald-900'
+                    : 'bg-amber-50 text-amber-800',
+                ].join(' ')}
+              >
                 {extractMsg}
               </p>
             )}
@@ -346,36 +369,56 @@ export function TryOnPage() {
           </Card>
         )}
 
-        {/* Preview clothing */}
+        {/* Preview clothing — OBAVEZNO proveri da li je prava odeća pre Grok poziva */}
         {clothingImage && (
-          <Card className="flex items-center gap-3">
-            <img
-              src={clothingImage}
-              alt="Odeća"
-              className="h-20 w-16 rounded-xl object-cover"
-            />
-            <div className="min-w-0 flex-1">
-              <p className="truncate font-semibold text-ink-900">
-                {productName ?? 'Odeća spremna'}
-              </p>
-              <p className="text-xs text-ink-400">Spremno za try-on</p>
+          <Card className="space-y-3">
+            <div className="flex items-center gap-3">
+              <img
+                src={clothingImage}
+                alt="Odeća"
+                className="h-28 w-20 rounded-xl object-cover shadow-sm"
+              />
+              <div className="min-w-0 flex-1">
+                <p className="truncate font-semibold text-ink-900">
+                  {productName ?? 'Odeća spremna'}
+                </p>
+                {garmentMeta.garmentLabelSr && (
+                  <p className="text-xs font-medium text-blush-700">
+                    Menja samo: {garmentMeta.garmentLabelSr}
+                  </p>
+                )}
+                <p className="text-xs text-ink-500">
+                  Bez prstenja / aksesoara sa manekena. Ostalo sa tvoje fotke ostaje.
+                </p>
+                <button
+                  type="button"
+                  className="mt-2 text-xs font-medium text-blush-600"
+                  onClick={() => {
+                    setClothingImage(null)
+                    setProductName(undefined)
+                    setGarmentMeta({})
+                    setExtractMsg(null)
+                  }}
+                >
+                  Ukloni / zameni
+                </button>
+              </div>
             </div>
-            <button
-              type="button"
-              className="text-xs font-medium text-blush-600"
-              onClick={() => {
-                setClothingImage(null)
-                setProductName(undefined)
-              }}
-            >
-              Ukloni
-            </button>
+            <p className="rounded-xl bg-blush-50 px-3 py-2 text-[11px] leading-relaxed text-ink-600">
+              Ako preview nije prava odeća — ne generiši. Najbolje radi upload / slika gde se vidi
+              sama majica (beli background). Ako je na slici maneken, Grok mora da uzme samo odeću
+              a zadrži tvoje lice iz body profila.
+            </p>
           </Card>
         )}
 
-        {/* Pose picker */}
+        {/* Pose: front = ista scena; ostalo = ista osoba, druga poza/ugao */}
         <div>
-          <h3 className="mb-2 px-1 text-sm font-semibold text-ink-800">Izaberi pozu</h3>
+          <h3 className="mb-1 px-1 text-sm font-semibold text-ink-800">Izaberi pozu</h3>
+          <p className="mb-2 px-1 text-[11px] text-ink-400">
+            Napred = ista poza/scena, samo odeća. Ostalo = ti u novoj pozi (ne maneken). Svaka
+            promena poza troši 1 kredit.
+          </p>
           <div className="grid grid-cols-1 gap-2">
             {TRY_ON_POSES.map((p) => (
               <button
@@ -419,7 +462,9 @@ export function TryOnPage() {
           disabled={!clothingImage}
           onClick={handleGenerate}
         >
-          {loading ? 'Generišem…' : `Generiši try-on (${TRY_ON_COST} kredit)`}
+          {loading
+            ? 'Grok Imagine generiše… (10–40s)'
+            : `Generiši try-on (${TRY_ON_COST} kredit)`}
         </Button>
 
         {!bodyProfile.completed && (
@@ -438,7 +483,7 @@ export function TryOnPage() {
         )}
 
         <p className="pb-6 text-center text-[11px] text-ink-400">
-          Placeholdere: services/productUrl.ts · services/tryOnApi.ts
+          Try-on: Grok Imagine · Link izvlači pravu sliku (og:image) · Ako ne uspe → Upload
         </p>
       </div>
     </div>

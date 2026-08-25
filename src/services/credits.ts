@@ -6,7 +6,14 @@
 
 import type { CreditPackage, CreditsState, SubscriptionPlan } from '../types'
 
-export const FREE_MONTHLY_CREDITS = 5
+/**
+ * TEST REŽIM — puno kredita dok razvijamo try-on.
+ * Kad budemo spremni za prava pravila: stavi false i podesi FREE_MONTHLY_CREDITS.
+ */
+export const TEST_MODE_CREDITS = true
+export const TEST_CREDIT_BALANCE = 9999
+
+export const FREE_MONTHLY_CREDITS = TEST_MODE_CREDITS ? TEST_CREDIT_BALANCE : 5
 export const TRY_ON_COST = 1
 
 export const CREDIT_PACKAGES: CreditPackage[] = [
@@ -51,6 +58,13 @@ export function defaultCredits(): CreditsState {
 
 export function loadCredits(): CreditsState {
   try {
+    // Dok testiramo: uvek drži puno kredita (i prepiše stari localStorage sa 0)
+    if (TEST_MODE_CREDITS) {
+      const boosted = defaultCredits()
+      saveCredits(boosted)
+      return boosted
+    }
+
     const raw = localStorage.getItem(CREDITS_KEY)
     if (!raw) return defaultCredits()
     const state = JSON.parse(raw) as CreditsState
