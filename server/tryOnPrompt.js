@@ -181,6 +181,22 @@ export function buildTryOnPrompt(opts = {}) {
     .join('\n')
 }
 
+/**
+ * Drugi poziv: zameni samo lice na gotovom try-on rezultatu.
+ */
+export function buildFaceRestorePrompt() {
+  return [
+    'FACE IDENTITY RESTORE on an existing virtual try-on photo.',
+    'IMAGE 1 = the try-on result (person already wearing the garment). Keep EVERYTHING from Image 1 except the face:',
+    '- same body, pose, clothing, fabric details, pockets, background, lighting, hands, skin outside the face',
+    '- do not change the garment, do not add/remove pockets, logos, or accessories',
+    'IMAGE 2 = the real customer face close-up. Replace ONLY the face in Image 1 with this exact face.',
+    'Match Image 2 face exactly: eyes, nose, mouth, jaw, skin tone, freckles, expression baseline.',
+    'Seamless photoreal blend. No text, no watermarks.',
+    'FORBIDDEN: changing clothes, inventing garment details, copying anything from a catalog model, beautify morph that loses identity.',
+  ].join('\n')
+}
+
 function poseMode(pose) {
   if (!pose || pose === 'stojeći-front') return 'preserve'
   return 'restage'

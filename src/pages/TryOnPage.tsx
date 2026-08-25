@@ -35,6 +35,7 @@ export function TryOnPage() {
   const [viewIndex, setViewIndex] = useState(0)
   const [error, setError] = useState('')
   const [saved, setSaved] = useState(false)
+  const [lastCost, setLastCost] = useState<string | null>(null)
 
   const viewEntries = result
     ? (Object.entries(result.views) as [string, string][]).filter(([, url]) => !!url)
@@ -113,6 +114,7 @@ export function TryOnPage() {
       })
       spendTryOnCredit()
       setResult(tryOnResult)
+      setLastCost(tryOnResult.costLabel ?? null)
       setViewIndex(0)
       setSaved(false)
       setPhase('result')
@@ -145,6 +147,7 @@ export function TryOnPage() {
       })
       spendTryOnCredit()
       setResult(tryOnResult)
+      setLastCost(tryOnResult.costLabel ?? null)
       setViewIndex(0)
       setSaved(false)
     } catch (err) {
@@ -283,8 +286,13 @@ export function TryOnPage() {
             </Button>
           </div>
 
+          {lastCost && (
+            <p className="rounded-2xl bg-cream-100 px-3 py-2 text-center text-[11px] text-ink-600">
+              {lastCost}
+            </p>
+          )}
           <p className="pb-6 text-center text-[11px] text-ink-400">
-            Generisano preko Grok Imagine · 1 slika po kreditu (štednja)
+            2 poziva (try-on + face) · Grok Imagine 2.0
           </p>
         </div>
       </div>

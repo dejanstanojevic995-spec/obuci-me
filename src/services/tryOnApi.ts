@@ -30,7 +30,12 @@ const JPEG_QUALITY = 0.82
  * Generiše virtuelni try-on rezultat preko Grok Imagine.
  * Bira body fotku po pozi + uvek šalje face-lock crop sa front fotke.
  */
-export async function generateTryOn(params: GenerateTryOnParams): Promise<TryOnResult> {
+export type TryOnGenerateResult = TryOnResult & {
+  costLabel?: string
+  pipeline?: string
+}
+
+export async function generateTryOn(params: GenerateTryOnParams): Promise<TryOnGenerateResult> {
   const person = pickPersonPhotoForPose(params.bodyPhotos, params.pose)
   const frontForFace =
     params.bodyPhotos.find((p) => p.angle === 'front') || person
@@ -66,7 +71,19 @@ export async function generateTryOn(params: GenerateTryOnParams): Promise<TryOnR
     }),
   })
 
-  let payload: { error?: string; imageUrl?: string; detail?: unknown }
+  let payload: {
+    error?: string
+    imageUrl?: string
+    detail?: unknown
+    pipeline?: string
+    warning?: string
+    usage?: {
+      step1Ticks?: number
+      step2Ticks?: number
+      totalTicks?: number
+      approxUsd?: number
+    }
+  }
   try {
     payload = await res.json()
   } catch {
@@ -76,6 +93,23 @@ export async function generateTryOn(params: GenerateTryOnParams): Promise<TryOnR
   if (!res.ok || !payload.imageUrl) {
     const msg = payload.error || `Try-on nije uspeo (${res.status})`
     throw new Error(msg)
+  }
+
+  if (payload.usage) {
+    console.info(
+      '[try-on cost]',
+      'pipeline=',
+      payload.pipeline,
+      'step1$≈',
+      ((payload.usage.step1Ticks || 0) / 1e10).toFixed(4),
+      'step2$≈',
+      ((payload.usage.step2Ticks || 0) / 1e10).toFixed(4),
+      'total$≈',
+      payload.usage.approxUsd,
+    )
+  }
+  if (payload.warning) {
+    console.warn('[try-on]', payload.warning)
   }
 
   const recommendedSize = recommendSize(params.measurements)
@@ -89,6 +123,10 @@ export async function generateTryOn(params: GenerateTryOnParams): Promise<TryOnR
     views[viewKey] = payload.imageUrl
   }
 
+  const costLabel = payload.usage
+    ? `Trošak ≈ $${Number(payload.usage.approxUsd || 0).toFixed(4)} (1. poziv ≈ $${((payload.usage.step1Ticks || 0) / 1e10).toFixed(4)}, 2. ≈ $${((payload.usage.step2Ticks || 0) / 1e10).toFixed(4)})`
+    : undefined
+
   return {
     id: crypto.randomUUID(),
     createdAt: new Date().toISOString(),
@@ -100,6 +138,8 @@ export async function generateTryOn(params: GenerateTryOnParams): Promise<TryOnR
     views,
     recommendedSize,
     saved: false,
+    costLabel,
+    pipeline: payload.pipeline,
   }
 }
 
