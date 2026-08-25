@@ -127,44 +127,79 @@ export function OnboardingPage() {
         {step === 2 && (
           <div className="space-y-4">
             <p className="text-sm text-ink-500">
-              Otpremi najmanje 4 ugla (napred, levo, desno, nazad). Dodatna je opciona.
+              Otpremi najmanje 4 ugla (napred, levo, desno, nazad). Možeš izabrati iz{' '}
+              <strong>galerije</strong> ili da se <strong>slikaš</strong>.
             </p>
             <div className="grid grid-cols-2 gap-3">
               {ANGLES.map(({ angle, label, required }) => {
                 const existing = photos.find((p) => p.angle === angle)
+                const galleryId = `photo-gallery-${angle}`
+                const cameraId = `photo-camera-${angle}`
                 return (
-                  <label
+                  <div
                     key={angle}
-                    className="relative flex aspect-[3/4] cursor-pointer flex-col items-center justify-center overflow-hidden rounded-3xl border-2 border-dashed border-blush-200 bg-white transition hover:border-blush-400"
+                    className="overflow-hidden rounded-3xl border-2 border-dashed border-blush-200 bg-white"
                   >
-                    {existing ? (
-                      <img
-                        src={existing.dataUrl}
-                        alt={label}
-                        className="absolute inset-0 h-full w-full object-cover"
-                      />
-                    ) : (
-                      <>
-                        <span className="text-2xl text-blush-300">+</span>
-                        <span className="mt-1 text-sm font-medium text-ink-600">{label}</span>
-                        {required && (
-                          <span className="mt-0.5 text-[10px] text-ink-400">obavezno</span>
-                        )}
-                      </>
-                    )}
-                    {existing && (
-                      <span className="absolute bottom-2 left-2 rounded-full bg-black/50 px-2 py-0.5 text-[10px] font-medium text-white">
-                        {label}
-                      </span>
-                    )}
+                    <div className="relative flex aspect-[3/4] flex-col items-center justify-center bg-blush-50/40">
+                      {existing ? (
+                        <img
+                          src={existing.dataUrl}
+                          alt={label}
+                          className="absolute inset-0 h-full w-full object-cover"
+                        />
+                      ) : (
+                        <>
+                          <span className="text-2xl text-blush-300">+</span>
+                          <span className="mt-1 text-sm font-medium text-ink-600">{label}</span>
+                          {required && (
+                            <span className="mt-0.5 text-[10px] text-ink-400">obavezno</span>
+                          )}
+                        </>
+                      )}
+                      {existing && (
+                        <span className="absolute bottom-2 left-2 rounded-full bg-black/50 px-2 py-0.5 text-[10px] font-medium text-white">
+                          {label}
+                        </span>
+                      )}
+                    </div>
+                    <div className="grid grid-cols-2 gap-px border-t border-blush-100 bg-blush-100">
+                      <label
+                        htmlFor={galleryId}
+                        className="cursor-pointer bg-white px-1 py-2.5 text-center text-[11px] font-semibold text-blush-700 active:bg-blush-50"
+                      >
+                        Galerija
+                      </label>
+                      <label
+                        htmlFor={cameraId}
+                        className="cursor-pointer bg-white px-1 py-2.5 text-center text-[11px] font-semibold text-ink-700 active:bg-blush-50"
+                      >
+                        Kamera
+                      </label>
+                    </div>
+                    {/* Bez capture = otvara galeriju / file picker */}
                     <input
+                      id={galleryId}
+                      type="file"
+                      accept="image/*"
+                      className="hidden"
+                      onChange={(e) => {
+                        handleFile(angle, e.target.files?.[0] ?? null)
+                        e.target.value = ''
+                      }}
+                    />
+                    {/* Sa capture = kamera na telefonu */}
+                    <input
+                      id={cameraId}
                       type="file"
                       accept="image/*"
                       capture="environment"
                       className="hidden"
-                      onChange={(e) => handleFile(angle, e.target.files?.[0] ?? null)}
+                      onChange={(e) => {
+                        handleFile(angle, e.target.files?.[0] ?? null)
+                        e.target.value = ''
+                      }}
                     />
-                  </label>
+                  </div>
                 )
               })}
             </div>
