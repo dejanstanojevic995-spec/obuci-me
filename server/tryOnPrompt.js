@@ -58,12 +58,14 @@ export function buildTryOnPrompt(opts = {}) {
         'If metadata indicates hoodie/sweatshirt → change ONLY the hoodie. Do NOT also change pants.',
         'If the model in Image 2 wears a full outfit, ignore every piece that is NOT the sold product.',
         'NEVER invent a garment that is not clearly the product.',
+        'Copy visible garment details exactly (pockets, buttons, seams, collar). Do NOT invent extra pockets or details.',
       ].join('\n')
     : [
         'TARGET GARMENT (critical):',
         `Change ONLY: ${changeOnly || 'the single sold product garment'}.`,
         'Image 2 may show a full styled look — ignore extra pieces that are not this product.',
         'NEVER invent a different garment category than the product.',
+        'Copy visible garment details exactly (pockets, buttons, seams, collar). Do NOT invent extra pockets or details not visible in the clothing reference.',
       ].join('\n')
 
   const keepList =
