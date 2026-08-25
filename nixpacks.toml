@@ -1,0 +1,3 @@
+# Spreci dupli npm run build (Nixpacks + Railway buildCommand conflict)
+[phases.build]
+cmds = []
