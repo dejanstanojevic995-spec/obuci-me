@@ -76,11 +76,19 @@ export function AppProvider({ children }: { children: ReactNode }) {
   }, [])
 
   useEffect(() => {
-    localStorage.setItem(BODY_KEY, JSON.stringify(bodyProfile))
+    try {
+      localStorage.setItem(BODY_KEY, JSON.stringify(bodyProfile))
+    } catch (err) {
+      console.warn('[storage] body profile save failed (quota?)', err)
+    }
   }, [bodyProfile])
 
   useEffect(() => {
-    localStorage.setItem(WARDROBE_KEY, JSON.stringify(wardrobe))
+    try {
+      localStorage.setItem(WARDROBE_KEY, JSON.stringify(wardrobe))
+    } catch (err) {
+      console.warn('[storage] wardrobe save failed (quota?)', err)
+    }
   }, [wardrobe])
 
   const login = useCallback(async (email: string, password: string) => {
