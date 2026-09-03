@@ -13,7 +13,7 @@ export function HomePage() {
     <div>
       <PageHeader
         title={`Zdravo, ${firstName}`}
-        subtitle="Sprema za isprobavanje?"
+        subtitle="Spremna za isprobavanje?"
         right={
           <Link
             to="/app/krediti"

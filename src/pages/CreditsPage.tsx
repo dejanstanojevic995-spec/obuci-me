@@ -5,9 +5,11 @@ import { Card } from '../components/ui/Card'
 import { Badge } from '../components/ui/Badge'
 import { useApp } from '../context/AppContext'
 import {
+  BETA_TEST,
   CREDIT_PACKAGES,
-  SUBSCRIPTION_PLANS,
   FREE_MONTHLY_CREDITS,
+  PURCHASES_ENABLED,
+  SUBSCRIPTION_PLANS,
   purchasePackage,
   subscribePlan,
 } from '../services/credits'
@@ -18,10 +20,13 @@ export function CreditsPage() {
   const [message, setMessage] = useState('')
 
   async function buy(packageId: string) {
+    if (!PURCHASES_ENABLED) {
+      setMessage('Kupovina je zaključana tokom beta testa. Krediti su ograničeni za testiranje.')
+      return
+    }
     setLoading(packageId)
     setMessage('')
     try {
-      // TODO: Stripe / payment provider
       const next = await purchasePackage(credits, packageId)
       setCredits(next)
       setMessage('Demo: krediti su dodati. Pravo plaćanje stiže kasnije.')
@@ -33,10 +38,13 @@ export function CreditsPage() {
   }
 
   async function subscribe(planId: string) {
+    if (!PURCHASES_ENABLED) {
+      setMessage('Pretplata je zaključana tokom beta testa.')
+      return
+    }
     setLoading(planId)
     setMessage('')
     try {
-      // TODO: Stripe Subscriptions
       const next = await subscribePlan(credits, planId)
       setCredits(next)
       setMessage('Demo: pretplata aktivirana. Pravo plaćanje stiže kasnije.')
@@ -56,10 +64,17 @@ export function CreditsPage() {
           <p className="text-sm text-white/80">Trenutno stanje</p>
           <p className="mt-1 font-display text-4xl font-semibold">{credits.balance}</p>
           <p className="mt-1 text-sm text-white/75">
-            {FREE_MONTHLY_CREDITS} besplatnih mesečno · iskorišćeno ovog meseca:{' '}
-            {credits.freeUsedThisMonth}
+            {BETA_TEST
+              ? `Beta test · start ${FREE_MONTHLY_CREDITS} kredita · iskorišćeno: ${credits.freeUsedThisMonth}`
+              : `${FREE_MONTHLY_CREDITS} besplatnih mesečno · iskorišćeno ovog meseca: ${credits.freeUsedThisMonth}`}
           </p>
         </Card>
+
+        {!PURCHASES_ENABLED && (
+          <div className="rounded-2xl border border-amber-200 bg-amber-50 px-4 py-3 text-sm text-amber-900">
+            Trenutno ne možeš da kupiš dodatne kredite ni pretplatu. Kad nestanu, javi nam
+          </div>
+        )}
 
         {message && (
           <div className="rounded-2xl border border-blush-200 bg-blush-50 px-4 py-3 text-sm text-blush-800">
@@ -84,9 +99,10 @@ export function CreditsPage() {
                 <Button
                   size="sm"
                   loading={loading === pack.id}
+                  disabled={!PURCHASES_ENABLED}
                   onClick={() => buy(pack.id)}
                 >
-                  Kupi
+                  {PURCHASES_ENABLED ? 'Kupi' : 'Uskoro'}
                 </Button>
               </Card>
             ))}
@@ -117,11 +133,11 @@ export function CreditsPage() {
                     <Button
                       size="sm"
                       variant={active ? 'outline' : 'primary'}
-                      disabled={active}
+                      disabled={active || !PURCHASES_ENABLED}
                       loading={loading === plan.id}
                       onClick={() => subscribe(plan.id)}
                     >
-                      {active ? 'Aktivno' : 'Pretplati se'}
+                      {active ? 'Aktivno' : PURCHASES_ENABLED ? 'Pretplati se' : 'Uskoro'}
                     </Button>
                   </div>
                 </Card>
@@ -131,8 +147,9 @@ export function CreditsPage() {
         </div>
 
         <p className="text-center text-[11px] text-ink-400">
-          {/* TODO: payment provider */}
-          Demo plaćanje — povezati Stripe ili lokalni payment provider
+          {PURCHASES_ENABLED
+            ? 'Demo plaćanje — povezati Stripe ili lokalni payment provider'
+            : 'Beta · plaćanje biće dostupno posle testa'}
         </p>
       </div>
     </div>

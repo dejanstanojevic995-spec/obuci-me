@@ -28,7 +28,7 @@ export function TryOnPage() {
     keepFromCustomer?: string[]
   }>({})
   const [extractMsg, setExtractMsg] = useState<string | null>(null)
-  const [pose, setPose] = useState<TryOnPose>('hodajući')
+  const [pose, setPose] = useState<TryOnPose>('poza-5')
   const [loading, setLoading] = useState(false)
   const [phase, setPhase] = useState<'setup' | 'result'>('setup')
   const [result, setResult] = useState<TryOnResult | null>(null)
@@ -420,13 +420,9 @@ export function TryOnPage() {
           </Card>
         )}
 
-        {/* Poze: 1 tekstualna (hod) + reference slike (samo stil poziranja) */}
+        {/* Sve poze = reference slike (Grok uzima samo stil poziranja) */}
         <div>
-          <h3 className="mb-1 px-1 text-sm font-semibold text-ink-800">Izaberi pozu</h3>
-          <p className="mb-2 px-1 text-[11px] text-ink-400">
-            Sa pose-slike Grok uzima samo položaj tela (ne lice modela). Svaka generacija = 2 AI
-            poziva.
-          </p>
+          <h3 className="mb-2 px-1 text-sm font-semibold text-ink-800">Izaberi pozu</h3>
           <div className="grid grid-cols-2 gap-2">
             {TRY_ON_POSES.map((p) => (
               <button
@@ -438,20 +434,13 @@ export function TryOnPage() {
                   pose === p.id ? 'border-blush-500 bg-blush-50' : 'border-ink-100 bg-white',
                 ].join(' ')}
               >
-                {p.thumbnail ? (
-                  <img
-                    src={`${p.thumbnail}?v=1`}
-                    alt={p.label}
-                    className="aspect-[3/4] w-full object-cover"
-                  />
-                ) : (
-                  <div className="flex aspect-[3/4] items-center justify-center bg-blush-100 px-2 text-center text-xs font-medium text-blush-800">
-                    Hodajući napred
-                  </div>
-                )}
+                <img
+                  src={`${p.thumbnail}?v=2`}
+                  alt={p.label}
+                  className="aspect-[3/4] w-full object-cover"
+                />
                 <div className="px-2 py-2">
                   <p className="text-xs font-semibold text-ink-900">{p.label}</p>
-                  <p className="text-[10px] text-ink-400">{p.description}</p>
                 </div>
               </button>
             ))}

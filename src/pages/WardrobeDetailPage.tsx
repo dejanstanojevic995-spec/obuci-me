@@ -20,7 +20,10 @@ export function WardrobeDetailPage() {
 
   const viewEntries = collectLookViews(look)
   const current = viewEntries[viewIndex]
-  const poseLabel = TRY_ON_POSES.find((p) => p.id === look.pose)?.label ?? look.pose
+  const poseLabel =
+    look.pose === 'hodajući'
+      ? 'The Catwalk'
+      : (TRY_ON_POSES.find((p) => p.id === look.pose)?.label ?? look.pose)
 
   return (
     <div>

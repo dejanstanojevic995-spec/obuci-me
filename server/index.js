@@ -12,11 +12,7 @@ import { fileURLToPath } from 'url'
 import express from 'express'
 import cors from 'cors'
 import { extractProduct } from './productExtract.js'
-import {
-  buildPoseComposePrompt,
-  buildWalkingPosePrompt,
-  buildDressPrompt,
-} from './tryOnPrompt.js'
+import { buildPoseComposePrompt, buildDressPrompt } from './tryOnPrompt.js'
 import { detectGarment } from './garmentDetect.js'
 import { hasApifyToken } from './apifyExtract.js'
 import { hasFirecrawlKey } from './firecrawlExtract.js'
@@ -30,6 +26,9 @@ const POSE_FILES = {
   'poza-2': 'poza-2.png',
   'poza-3': 'poza-3.png',
   'poza-4': 'poza-4.png',
+  'poza-5': 'poza-5.jpg',
+  // stari id iz ormara → ista slika kao The Catwalk
+  hodajući: 'poza-5.jpg',
 }
 
 function loadPoseDataUrl(poseId) {
@@ -39,7 +38,8 @@ function loadPoseDataUrl(poseId) {
   if (!fs.existsSync(full)) return null
   const buf = fs.readFileSync(full)
   const ext = path.extname(file).toLowerCase()
-  const mime = ext === '.png' ? 'image/png' : 'image/jpeg'
+  const mime =
+    ext === '.png' ? 'image/png' : ext === '.webp' ? 'image/webp' : 'image/jpeg'
   return `data:${mime};base64,${buf.toString('base64')}`
 }
 
@@ -149,36 +149,30 @@ app.post('/api/try-on', async (req, res) => {
     }
 
     /**
-     * VARIJANTA C (novo):
-     * 1) poza + telo + face  → osoba u pozi
+     * VARIJANTA C:
+     * 1) poza-ref + telo + face  → osoba u pozi (sve poze imaju sliku)
      * 2) ta osoba + odeća napred (+ nazad ako ima) → oblačenje
      */
-    const poseDataUrl = pose && pose !== 'hodajući' ? loadPoseDataUrl(pose) : null
-    const usePoseImage = Boolean(poseDataUrl)
+    const poseId = pose || 'poza-5'
+    const poseDataUrl = loadPoseDataUrl(poseId)
+    if (!poseDataUrl) {
+      return res.status(400).json({
+        error: `Nema pose-slike za "${poseId}". Proveri public/poses/.`,
+      })
+    }
 
     /** @type {{ type: string, url: string }[]} */
-    let step1Images
-    let step1Prompt
-
-    if (usePoseImage) {
-      // Image1 body, Image2 pose ref (stil ONLY), Image3 face
-      step1Images = [{ type: 'image_url', url: personImage }]
-      step1Images.push({ type: 'image_url', url: poseDataUrl })
-      if (hasFaceLock) step1Images.push({ type: 'image_url', url: faceImage })
-      step1Prompt = buildPoseComposePrompt({ poseLabel: pose })
-    } else {
-      // hodajući — bez pose slike: body + face + tekst
-      step1Images = [{ type: 'image_url', url: personImage }]
-      if (hasFaceLock) step1Images.push({ type: 'image_url', url: faceImage })
-      step1Prompt = buildWalkingPosePrompt()
-    }
+    // Image1 body, Image2 pose ref (stil ONLY), Image3 face
+    const step1Images = [{ type: 'image_url', url: personImage }]
+    step1Images.push({ type: 'image_url', url: poseDataUrl })
+    if (hasFaceLock) step1Images.push({ type: 'image_url', url: faceImage })
+    const step1Prompt = buildPoseComposePrompt({ poseLabel: poseId })
 
     console.log(
       '[try-on] pipeline=C-pose-then-dress',
       'pose=',
-      pose || 'hodajući',
-      'poseImage=',
-      usePoseImage,
+      poseId,
+      'poseImage=true',
       'face=',
       hasFaceLock,
       'garment=',

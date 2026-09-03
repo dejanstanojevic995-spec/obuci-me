@@ -32,7 +32,9 @@ export function WardrobePage() {
           <div className="grid grid-cols-2 gap-3 pb-6">
             {wardrobe.map((look) => {
               const poseLabel =
-                TRY_ON_POSES.find((p) => p.id === look.pose)?.label ?? look.pose
+                look.pose === 'hodajući'
+                  ? 'The Catwalk'
+                  : (TRY_ON_POSES.find((p) => p.id === look.pose)?.label ?? look.pose)
               return (
                 <div
                   key={look.id}

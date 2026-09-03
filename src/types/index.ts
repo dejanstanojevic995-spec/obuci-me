@@ -32,49 +32,27 @@ export interface User {
 }
 
 export type TryOnPose =
-  | 'hodajući'
+  | 'hodajući' // legacy (stari ormar) — mapira se na The Catwalk
   | 'poza-1'
   | 'poza-2'
   | 'poza-3'
   | 'poza-4'
+  | 'poza-5'
 
-/** thumbnail = putanja u /public (null = nema pose-slike, samo tekst) */
+/**
+ * Sve poze imaju reference sliku (Grok uzima SAMO stil poziranja).
+ * label = ime iz fajla posle crtice, bez "Poza N".
+ */
 export const TRY_ON_POSES: {
   id: TryOnPose
   label: string
-  description: string
-  thumbnail: string | null
+  thumbnail: string
 }[] = [
-  {
-    id: 'hodajući',
-    label: 'Hodajući napred',
-    description: 'Korak ka kameri — bez pose-slike, samo tekst',
-    thumbnail: null,
-  },
-  {
-    id: 'poza-1',
-    label: 'Poza 1',
-    description: 'Stojeći, ruka uz lice',
-    thumbnail: '/poses/poza-1.png',
-  },
-  {
-    id: 'poza-2',
-    label: 'Poza 2',
-    description: 'Profil, ruka uz kosu',
-    thumbnail: '/poses/poza-2.png',
-  },
-  {
-    id: 'poza-3',
-    label: 'Poza 3',
-    description: 'Sedeći, pogled preko ramena',
-    thumbnail: '/poses/poza-3.png',
-  },
-  {
-    id: 'poza-4',
-    label: 'Poza 4',
-    description: 'Čučeći / sedeći na podu',
-    thumbnail: '/poses/poza-4.png',
-  },
+  { id: 'poza-5', label: 'The Catwalk', thumbnail: '/poses/poza-5.jpg' },
+  { id: 'poza-1', label: 'Head-Hip', thumbnail: '/poses/poza-1.png' },
+  { id: 'poza-2', label: 'Soft Hip', thumbnail: '/poses/poza-2.png' },
+  { id: 'poza-3', label: 'Lookback', thumbnail: '/poses/poza-3.png' },
+  { id: 'poza-4', label: 'Casual Front', thumbnail: '/poses/poza-4.png' },
 ]
 
 export type ViewAngle = 'front' | 'angle45' | 'side' | 'back' | 'angle135'
