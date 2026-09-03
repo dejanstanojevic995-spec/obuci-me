@@ -70,7 +70,7 @@ export function detectGarment(input = {}) {
     {
       type: 'shirt',
       labelSr: 'košulja / bluza',
-      re: /\b(kosulj\w*|(?<!t-)shirt|blouse|bluz\w*)\b/i,
+      re: /\b(kosulj\w*|natkosulj\w*|(?<!t-)shirt|blouse|bluz\w*)\b/i,
       changeOnly: 'the shirt / blouse ONLY',
       keep: ['pants/bottoms', 'shoes', 'jewelry', 'rings'],
     },

@@ -28,7 +28,7 @@ export function TryOnPage() {
     keepFromCustomer?: string[]
   }>({})
   const [extractMsg, setExtractMsg] = useState<string | null>(null)
-  const [pose, setPose] = useState<TryOnPose>('stojeći-front')
+  const [pose, setPose] = useState<TryOnPose>('hodajući')
   const [loading, setLoading] = useState(false)
   const [phase, setPhase] = useState<'setup' | 'result'>('setup')
   const [result, setResult] = useState<TryOnResult | null>(null)
@@ -420,37 +420,38 @@ export function TryOnPage() {
           </Card>
         )}
 
-        {/* Pose: front = ista scena; ostalo = ista osoba, druga poza/ugao */}
+        {/* Poze: 1 tekstualna (hod) + reference slike (samo stil poziranja) */}
         <div>
           <h3 className="mb-1 px-1 text-sm font-semibold text-ink-800">Izaberi pozu</h3>
           <p className="mb-2 px-1 text-[11px] text-ink-400">
-            Napred = ista poza/scena, samo odeća. Ostalo = ti u novoj pozi (ne maneken). Svaka
-            promena poza troši 1 kredit.
+            Sa pose-slike Grok uzima samo položaj tela (ne lice modela). Svaka generacija = 2 AI
+            poziva.
           </p>
-          <div className="grid grid-cols-1 gap-2">
+          <div className="grid grid-cols-2 gap-2">
             {TRY_ON_POSES.map((p) => (
               <button
                 key={p.id}
                 type="button"
                 onClick={() => setPose(p.id)}
                 className={[
-                  'flex items-center justify-between rounded-2xl border px-4 py-3 text-left transition',
-                  pose === p.id
-                    ? 'border-blush-500 bg-blush-50'
-                    : 'border-ink-100 bg-white',
+                  'overflow-hidden rounded-2xl border text-left transition',
+                  pose === p.id ? 'border-blush-500 bg-blush-50' : 'border-ink-100 bg-white',
                 ].join(' ')}
               >
-                <div>
-                  <p className="text-sm font-semibold text-ink-900">{p.label}</p>
-                  <p className="text-xs text-ink-400">{p.description}</p>
-                </div>
-                <div
-                  className={[
-                    'flex h-5 w-5 items-center justify-center rounded-full border-2',
-                    pose === p.id ? 'border-blush-500 bg-blush-500' : 'border-ink-200',
-                  ].join(' ')}
-                >
-                  {pose === p.id && <div className="h-2 w-2 rounded-full bg-white" />}
+                {p.thumbnail ? (
+                  <img
+                    src={`${p.thumbnail}?v=1`}
+                    alt={p.label}
+                    className="aspect-[3/4] w-full object-cover"
+                  />
+                ) : (
+                  <div className="flex aspect-[3/4] items-center justify-center bg-blush-100 px-2 text-center text-xs font-medium text-blush-800">
+                    Hodajući napred
+                  </div>
+                )}
+                <div className="px-2 py-2">
+                  <p className="text-xs font-semibold text-ink-900">{p.label}</p>
+                  <p className="text-[10px] text-ink-400">{p.description}</p>
                 </div>
               </button>
             ))}

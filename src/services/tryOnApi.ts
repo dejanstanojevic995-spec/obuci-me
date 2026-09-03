@@ -143,38 +143,16 @@ export async function generateTryOn(params: GenerateTryOnParams): Promise<TryOnG
   }
 }
 
-/** Za bočnu pozu koristi left/right body fotku ako je korisnik uploadovao. */
+/** Pipeline C: uvek front body fotka (poza dolazi iz pose-reference / teksta). */
 function pickPersonPhotoForPose(
   photos: BodyPhoto[],
-  pose: TryOnPose,
+  _pose: TryOnPose,
 ): BodyPhoto | undefined {
-  const by = (angle: BodyPhoto['angle']) => photos.find((p) => p.angle === angle)
-
-  if (pose === 'stojeći-bočno') {
-    return by('left') || by('right') || by('front') || photos[0]
-  }
-  if (pose === 'sedeći') {
-    // sedeća: front i dalje najbolja baza
-    return by('front') || photos[0]
-  }
-  // front, hodajući, ruke-u-bok
-  return by('front') || photos[0]
+  return photos.find((p) => p.angle === 'front') || photos[0]
 }
 
-function viewKeyForPose(pose: TryOnPose): ViewAngle {
-  switch (pose) {
-    case 'stojeći-bočno':
-      return 'side'
-    case 'hodajući':
-      return 'angle45'
-    case 'ruke-u-bok':
-      return 'front'
-    case 'sedeći':
-      return 'angle135'
-    case 'stojeći-front':
-    default:
-      return 'front'
-  }
+function viewKeyForPose(_pose: TryOnPose): ViewAngle {
+  return 'front'
 }
 
 /**

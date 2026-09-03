@@ -7,11 +7,16 @@
 
 import dotenv from 'dotenv'
 import path from 'path'
+import fs from 'fs'
 import { fileURLToPath } from 'url'
 import express from 'express'
 import cors from 'cors'
 import { extractProduct } from './productExtract.js'
-import { buildTryOnPrompt, buildFaceRestorePrompt } from './tryOnPrompt.js'
+import {
+  buildPoseComposePrompt,
+  buildWalkingPosePrompt,
+  buildDressPrompt,
+} from './tryOnPrompt.js'
 import { detectGarment } from './garmentDetect.js'
 import { hasApifyToken } from './apifyExtract.js'
 import { hasFirecrawlKey } from './firecrawlExtract.js'
@@ -19,6 +24,24 @@ import { hasFirecrawlKey } from './firecrawlExtract.js'
 const __dirname = path.dirname(fileURLToPath(import.meta.url))
 // Učitaj .env iz root-a projekta (jedan nivo iznad server/)
 dotenv.config({ path: path.join(__dirname, '..', '.env') })
+
+const POSE_FILES = {
+  'poza-1': 'poza-1.png',
+  'poza-2': 'poza-2.png',
+  'poza-3': 'poza-3.png',
+  'poza-4': 'poza-4.png',
+}
+
+function loadPoseDataUrl(poseId) {
+  const file = POSE_FILES[poseId]
+  if (!file) return null
+  const full = path.join(__dirname, '..', 'public', 'poses', file)
+  if (!fs.existsSync(full)) return null
+  const buf = fs.readFileSync(full)
+  const ext = path.extname(file).toLowerCase()
+  const mime = ext === '.png' ? 'image/png' : 'image/jpeg'
+  return `data:${mime};base64,${buf.toString('base64')}`
+}
 
 const app = express()
 const PORT = Number(process.env.PORT) || 3001
@@ -111,13 +134,11 @@ app.post('/api/try-on', async (req, res) => {
     }
 
     const hasFaceLock = typeof faceImage === 'string' && faceImage.length > 40
-    // Opciono: druga slika odeće (napred/nazad) — stane jer face ide u 2. poziv
     const clothingImage2 =
       typeof req.body?.clothingImage2 === 'string' && req.body.clothingImage2.length > 40
         ? req.body.clothingImage2
         : null
 
-    // Tip iz extract-a, ili detekcija iz imena/URL-a (bez nagađanja duksa!)
     const detected = detectGarment({ productName, url: productUrl })
     const garment = {
       type: garmentType || detected.type,
@@ -128,49 +149,43 @@ app.post('/api/try-on', async (req, res) => {
     }
 
     /**
-     * VARIJANTA C — 2 poziva:
-     * 1) try-on: telo + odeća (+ opc. 2. odeća) — BEZ face (oslobađa slot)
-     * 2) face restore: rezultat + face crop
+     * VARIJANTA C (novo):
+     * 1) poza + telo + face  → osoba u pozi
+     * 2) ta osoba + odeća napred (+ nazad ako ima) → oblačenje
      */
-    const prompt = buildTryOnPrompt({
-      pose,
-      productName,
-      personAngle,
-      hasFaceLock: false,
-      garmentType: garment.type,
-      garmentLabelSr: garment.labelSr,
-      changeOnly: garment.changeOnly,
-      keepFromCustomer: garment.keepFromCustomer,
-      garmentConfidence: garment.confidence,
-    })
+    const poseDataUrl = pose && pose !== 'hodajući' ? loadPoseDataUrl(pose) : null
+    const usePoseImage = Boolean(poseDataUrl)
 
     /** @type {{ type: string, url: string }[]} */
-    const images = [
-      { type: 'image_url', url: personImage },
-      { type: 'image_url', url: clothingImage },
-    ]
-    if (clothingImage2) {
-      images.push({ type: 'image_url', url: clothingImage2 })
+    let step1Images
+    let step1Prompt
+
+    if (usePoseImage) {
+      // Image1 body, Image2 pose ref (stil ONLY), Image3 face
+      step1Images = [{ type: 'image_url', url: personImage }]
+      step1Images.push({ type: 'image_url', url: poseDataUrl })
+      if (hasFaceLock) step1Images.push({ type: 'image_url', url: faceImage })
+      step1Prompt = buildPoseComposePrompt({ poseLabel: pose })
+    } else {
+      // hodajući — bez pose slike: body + face + tekst
+      step1Images = [{ type: 'image_url', url: personImage }]
+      if (hasFaceLock) step1Images.push({ type: 'image_url', url: faceImage })
+      step1Prompt = buildWalkingPosePrompt()
     }
 
     console.log(
-      '[try-on] pipeline=C-two-step',
-      'model=',
-      XAI_IMAGE_MODEL,
+      '[try-on] pipeline=C-pose-then-dress',
       'pose=',
-      pose || '-',
-      'faceStep2=',
+      pose || 'hodajući',
+      'poseImage=',
+      usePoseImage,
+      'face=',
       hasFaceLock,
-      'clothingRefs=',
-      images.length - 1,
       'garment=',
       garment.labelSr,
     )
 
-    const step1 = await callXaiEdit({
-      prompt,
-      images,
-    })
+    const step1 = await callXaiEdit({ prompt: step1Prompt, images: step1Images })
     if (step1.error) {
       return res.status(step1.status || 502).json({
         error: step1.error,
@@ -178,44 +193,50 @@ app.post('/api/try-on', async (req, res) => {
       })
     }
 
-    let resultUrl = step1.imageUrl
-    let step2Usage = null
-
-    if (hasFaceLock) {
-      console.log('[try-on] step2 face restore…')
-      const step2 = await callXaiEdit({
-        prompt: buildFaceRestorePrompt(),
-        images: [
-          { type: 'image_url', url: resultUrl },
-          { type: 'image_url', url: faceImage },
-        ],
-      })
-      if (step2.error) {
-        // Ne propadaj skroz — vrati step1 + upozorenje
-        console.warn('[try-on] step2 failed, returning step1:', step2.error)
-        const persisted = await persistAsDataUrl(resultUrl)
-        return res.json({
-          imageUrl: persisted,
-          model: XAI_IMAGE_MODEL,
-          pipeline: 'two-step-face-failed',
-          warning: 'Try-on OK, face restore nije uspeo — vraćen prvi rezultat.',
-          usage: {
-            step1: step1.usage,
-            step2: null,
-            step1Ticks: usageTicks(step1.usage),
-            step2Ticks: 0,
-            totalTicks: usageTicks(step1.usage),
-            approxUsd: ticksToUsd(usageTicks(step1.usage)),
-          },
-        })
-      }
-      resultUrl = step2.imageUrl
-      step2Usage = step2.usage
+    // Step 2 — dress
+    /** @type {{ type: string, url: string }[]} */
+    const step2Images = [
+      { type: 'image_url', url: step1.imageUrl },
+      { type: 'image_url', url: clothingImage },
+    ]
+    if (clothingImage2) {
+      step2Images.push({ type: 'image_url', url: clothingImage2 })
     }
 
-    const persisted = await persistAsDataUrl(resultUrl)
+    const step2Prompt = buildDressPrompt({
+      productName,
+      garmentLabelSr: garment.labelSr,
+      changeOnly: garment.changeOnly,
+      keepFromCustomer: garment.keepFromCustomer,
+      garmentConfidence: garment.confidence,
+      hasBackImage: Boolean(clothingImage2),
+    })
+
+    console.log('[try-on] step2 dress… clothingRefs=', clothingImage2 ? 2 : 1)
+
+    const step2 = await callXaiEdit({ prompt: step2Prompt, images: step2Images })
+    if (step2.error) {
+      console.warn('[try-on] step2 dress failed, returning posed undressed:', step2.error)
+      const persisted = await persistAsDataUrl(step1.imageUrl)
+      return res.json({
+        imageUrl: persisted,
+        model: XAI_IMAGE_MODEL,
+        pipeline: 'pose-ok-dress-failed',
+        warning: 'Poza OK, oblačenje nije uspelo — vraćen rezultat bez odeće sa sajta.',
+        usage: {
+          step1: step1.usage,
+          step2: null,
+          step1Ticks: usageTicks(step1.usage),
+          step2Ticks: 0,
+          totalTicks: usageTicks(step1.usage),
+          approxUsd: ticksToUsd(usageTicks(step1.usage)),
+        },
+      })
+    }
+
+    const persisted = await persistAsDataUrl(step2.imageUrl)
     const t1 = usageTicks(step1.usage)
-    const t2 = usageTicks(step2Usage)
+    const t2 = usageTicks(step2.usage)
     const totalTicks = t1 + t2
 
     console.log(
@@ -232,10 +253,10 @@ app.post('/api/try-on', async (req, res) => {
     res.json({
       imageUrl: persisted,
       model: XAI_IMAGE_MODEL,
-      pipeline: hasFaceLock ? 'two-step' : 'one-step',
+      pipeline: 'pose-then-dress',
       usage: {
         step1: step1.usage,
-        step2: step2Usage,
+        step2: step2.usage,
         step1Ticks: t1,
         step2Ticks: t2,
         totalTicks,

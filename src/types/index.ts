@@ -32,18 +32,49 @@ export interface User {
 }
 
 export type TryOnPose =
-  | 'stojeći-front'
-  | 'stojeći-bočno'
   | 'hodajući'
-  | 'ruke-u-bok'
-  | 'sedeći'
+  | 'poza-1'
+  | 'poza-2'
+  | 'poza-3'
+  | 'poza-4'
 
-export const TRY_ON_POSES: { id: TryOnPose; label: string; description: string }[] = [
-  { id: 'stojeći-front', label: 'Stojeći napred', description: 'Klasičan frontalni pogled' },
-  { id: 'stojeći-bočno', label: 'Stojeći sa strane', description: 'Profil tela' },
-  { id: 'hodajući', label: 'Hodajući', description: 'Dinamičan korak' },
-  { id: 'ruke-u-bok', label: 'Ruke u bok', description: 'Samouverena poza' },
-  { id: 'sedeći', label: 'Sedeći', description: 'Opuštena poza' },
+/** thumbnail = putanja u /public (null = nema pose-slike, samo tekst) */
+export const TRY_ON_POSES: {
+  id: TryOnPose
+  label: string
+  description: string
+  thumbnail: string | null
+}[] = [
+  {
+    id: 'hodajući',
+    label: 'Hodajući napred',
+    description: 'Korak ka kameri — bez pose-slike, samo tekst',
+    thumbnail: null,
+  },
+  {
+    id: 'poza-1',
+    label: 'Poza 1',
+    description: 'Stojeći, ruka uz lice',
+    thumbnail: '/poses/poza-1.png',
+  },
+  {
+    id: 'poza-2',
+    label: 'Poza 2',
+    description: 'Profil, ruka uz kosu',
+    thumbnail: '/poses/poza-2.png',
+  },
+  {
+    id: 'poza-3',
+    label: 'Poza 3',
+    description: 'Sedeći, pogled preko ramena',
+    thumbnail: '/poses/poza-3.png',
+  },
+  {
+    id: 'poza-4',
+    label: 'Poza 4',
+    description: 'Čučeći / sedeći na podu',
+    thumbnail: '/poses/poza-4.png',
+  },
 ]
 
 export type ViewAngle = 'front' | 'angle45' | 'side' | 'back' | 'angle135'
